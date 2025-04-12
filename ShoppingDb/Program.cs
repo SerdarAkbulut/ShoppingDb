@@ -45,6 +45,7 @@ builder.Services.Configure<IdentityOptions>(options =>
     options.User.AllowedUserNameCharacters =
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ / ";
 });
+
 builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; 
@@ -86,6 +87,6 @@ app.UseCors(opt =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
+app.UseHttpsRedirection();
 SeedData.Initialize(app);
 app.Run();

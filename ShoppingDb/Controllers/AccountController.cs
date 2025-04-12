@@ -15,11 +15,12 @@ namespace ShoppingApi.Controllers
     {
         private readonly UserManager<User> _userManager;
         private readonly TokenService _tokenService;
-
-        public AccountController(UserManager<User> userManager, TokenService tokenService)
+private readonly RoleManager<Role> _roleManager;
+        public AccountController(UserManager<User> userManager, TokenService tokenService,RoleManager<Role> roleManager)
         {
             _userManager = userManager;
             _tokenService = tokenService;
+            _roleManager = roleManager;
         }
 
         [HttpPost("login")]
@@ -46,7 +47,8 @@ namespace ShoppingApi.Controllers
             {
                 return Unauthorized(new { message = "Geçersiz e-posta veya şifre." });
             }
-
+var roles = await _userManager.GetRolesAsync(user);
+var role=roles.FirstOrDefault();
             var token = await _tokenService.GenerateToken(user);
             return Ok(new
             {
@@ -55,7 +57,8 @@ namespace ShoppingApi.Controllers
                 {
                     user.Id,
                     user.UserName,
-                    user.Email
+                    user.Email,
+                    role
                 }
             });
         }

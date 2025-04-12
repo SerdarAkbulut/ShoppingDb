@@ -12,8 +12,8 @@ using ShoppingApi.Data;
 namespace ShoppingApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20250404090847_AddAddress")]
-    partial class AddAddress
+    [Migration("20250412145946_ImagePuclicId")]
+    partial class ImagePuclicId
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -217,6 +217,148 @@ namespace ShoppingApi.Migrations
                     b.ToTable("CartItem");
                 });
 
+            modelBuilder.Entity("ShoppingApi.Entity.Category", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Categories");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Pantalon"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Etek"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Mont"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Kap"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Tunik"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Elbise"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Takım"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "Triko Hırka"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "Badi Üst"
+                        });
+                });
+
+            modelBuilder.Entity("ShoppingApi.Entity.Color", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Colors");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "Kırmızı"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Mavi"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Siyah"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Beyaz"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Yeşil"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Bej"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Bordo"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "Lacivert"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "Zümrüt Yeşili"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "Pudra Pembe"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "Mint Yeşili"
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "Gri"
+                        });
+                });
+
             modelBuilder.Entity("ShoppingApi.Entity.Image", b =>
                 {
                     b.Property<int>("Id")
@@ -226,11 +368,14 @@ namespace ShoppingApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ImageUrl")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
+
+                    b.Property<string>("PublicId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -348,6 +493,80 @@ namespace ShoppingApi.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
+            modelBuilder.Entity("ShoppingApi.Entity.Size", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Sizes");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Name = "36"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "38"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "40"
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "42"
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "44"
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "46"
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "48"
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "50"
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "52"
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "54"
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "56"
+                        });
+                });
+
             modelBuilder.Entity("ShoppingApi.Entity.User", b =>
                 {
                     b.Property<string>("Id")
@@ -401,7 +620,6 @@ namespace ShoppingApi.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
@@ -426,26 +644,17 @@ namespace ShoppingApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Stock")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -455,41 +664,146 @@ namespace ShoppingApi.Migrations
                         new
                         {
                             Id = 1,
-                            Category = "Test Kategorisi",
                             Description = "Açıklama",
                             IsActive = true,
                             Name = "Test Ürünü",
-                            Price = 15m,
-                            Stock = 5
+                            Price = 15m
                         },
                         new
                         {
                             Id = 2,
-                            Category = "Test Kategorisi 2",
                             Description = "Açıklama 2",
                             IsActive = true,
                             Name = "Test Ürünü 2",
-                            Price = 20m,
-                            Stock = 5
+                            Price = 20m
                         },
                         new
                         {
                             Id = 3,
-                            Category = "Test Kategorisi 3",
                             Description = "Açıklama 3",
                             IsActive = true,
                             Name = "Test Ürünü 3",
-                            Price = 18m,
-                            Stock = 5
+                            Price = 18m
                         },
                         new
                         {
                             Id = 4,
-                            Category = "Test Kategorisi 4",
                             Description = "Açıklama 4",
                             IsActive = true,
                             Name = "Test Ürünü 4",
-                            Price = 9m,
+                            Price = 9m
+                        });
+                });
+
+            modelBuilder.Entity("ShoppingDb.Entity.ProductCategory", b =>
+                {
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.HasKey("ProductId", "CategoryId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("ProductCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            ProductId = 1,
+                            CategoryId = 1,
+                            Id = 0
+                        },
+                        new
+                        {
+                            ProductId = 1,
+                            CategoryId = 2,
+                            Id = 0
+                        },
+                        new
+                        {
+                            ProductId = 1,
+                            CategoryId = 3,
+                            Id = 0
+                        },
+                        new
+                        {
+                            ProductId = 2,
+                            CategoryId = 2,
+                            Id = 0
+                        },
+                        new
+                        {
+                            ProductId = 3,
+                            CategoryId = 3,
+                            Id = 0
+                        },
+                        new
+                        {
+                            ProductId = 4,
+                            CategoryId = 4,
+                            Id = 0
+                        });
+                });
+
+            modelBuilder.Entity("ShoppingDb.Entity.ProductVariant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("ColorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProductId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SizeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ColorId");
+
+                    b.HasIndex("ProductId");
+
+                    b.HasIndex("SizeId");
+
+                    b.ToTable("ProductVariants");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            ColorId = 3,
+                            ProductId = 1,
+                            SizeId = 2,
+                            Stock = 8
+                        },
+                        new
+                        {
+                            Id = 2,
+                            ColorId = 3,
+                            ProductId = 1,
+                            SizeId = 3,
+                            Stock = 12
+                        },
+                        new
+                        {
+                            Id = 3,
+                            ColorId = 4,
+                            ProductId = 1,
+                            SizeId = 2,
                             Stock = 5
                         });
                 });
@@ -605,9 +919,60 @@ namespace ShoppingApi.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("ShoppingDb.Entity.ProductCategory", b =>
+                {
+                    b.HasOne("ShoppingApi.Entity.Category", "Category")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingDb.Entity.Product", "Product")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Product");
+                });
+
+            modelBuilder.Entity("ShoppingDb.Entity.ProductVariant", b =>
+                {
+                    b.HasOne("ShoppingApi.Entity.Color", "Color")
+                        .WithMany()
+                        .HasForeignKey("ColorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingDb.Entity.Product", "Product")
+                        .WithMany("ProductVariants")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShoppingApi.Entity.Size", "Size")
+                        .WithMany()
+                        .HasForeignKey("SizeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Color");
+
+                    b.Navigation("Product");
+
+                    b.Navigation("Size");
+                });
+
             modelBuilder.Entity("ShoppingApi.Entity.Cart", b =>
                 {
                     b.Navigation("CartItems");
+                });
+
+            modelBuilder.Entity("ShoppingApi.Entity.Category", b =>
+                {
+                    b.Navigation("ProductCategories");
                 });
 
             modelBuilder.Entity("ShoppingApi.Entity.Order", b =>
@@ -623,6 +988,10 @@ namespace ShoppingApi.Migrations
             modelBuilder.Entity("ShoppingDb.Entity.Product", b =>
                 {
                     b.Navigation("Images");
+
+                    b.Navigation("ProductCategories");
+
+                    b.Navigation("ProductVariants");
                 });
 #pragma warning restore 612, 618
         }

@@ -7,12 +7,12 @@ namespace ShoppingApi.Entity
     public class Image
     {
         [Key]
-        public int Id { get; set; }  // ✅ Primary Key Ekledik
+        public int Id { get; set; }  
 
-        [Required]
         public string? ImageUrl { get; set; }
 
-        [ForeignKey("Product")]
+        public string PublicId { get; set; }
+       
         public int ProductId { get; set; }
 
         public Product Product { get; set; }

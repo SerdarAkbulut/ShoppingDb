@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShoppingApi.Data;
 
@@ -11,9 +12,11 @@ using ShoppingApi.Data;
 namespace ShoppingApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250409163838_ProductColorAndSize")]
+    partial class ProductColorAndSize
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -291,7 +294,7 @@ namespace ShoppingApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Colors");
+                    b.ToTable("Color");
 
                     b.HasData(
                         new
@@ -365,14 +368,11 @@ namespace ShoppingApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("ImageUrl")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");
-
-                    b.Property<string>("PublicId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -504,63 +504,33 @@ namespace ShoppingApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Sizes");
+                    b.ToTable("Size");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
-                            Name = "36"
+                            Name = "S"
                         },
                         new
                         {
                             Id = 2,
-                            Name = "38"
+                            Name = "M"
                         },
                         new
                         {
                             Id = 3,
-                            Name = "40"
+                            Name = "L"
                         },
                         new
                         {
                             Id = 4,
-                            Name = "42"
+                            Name = "XL"
                         },
                         new
                         {
                             Id = 5,
-                            Name = "44"
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "46"
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "48"
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "50"
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Name = "52"
-                        },
-                        new
-                        {
-                            Id = 10,
-                            Name = "54"
-                        },
-                        new
-                        {
-                            Id = 11,
-                            Name = "56"
+                            Name = "XXL"
                         });
                 });
 
@@ -642,12 +612,14 @@ namespace ShoppingApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
