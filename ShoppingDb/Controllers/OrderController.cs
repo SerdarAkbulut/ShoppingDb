@@ -55,16 +55,12 @@ namespace ShoppingApi.Controllers
                 {
                     ProductId = product.Id,
                     Price = product.Price,
-                    ProductImage = product.Images.FirstOrDefault().ImageUrl,
+                    ProductImages = product.Images.Select(i=>i.ImageUrl).FirstOrDefault(),
                     ProductName = product.Name,
                     Quantity = item.Quantity
                 };
                 items.Add(orderItem);
-                // product.Stock -= item.Quantity;
-                // if (product.Stock < 0)
-                // {
-                //     return BadRequest($"Product {product.Name} is out of stock");
-                // }
+              
             }
             var subTotal = items.Sum(i => i.Price * i.Quantity);
             var deliveryFee = 0;

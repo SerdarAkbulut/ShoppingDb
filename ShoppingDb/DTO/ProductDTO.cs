@@ -8,8 +8,6 @@ namespace ShoppingDb.DTO
 {
     public class ProductDTO
     {
-
-
         public string? Name { get; set; }
 
         public string? Description { get; set; }
@@ -18,13 +16,15 @@ namespace ShoppingDb.DTO
 
         public bool IsActive { get; set; }
 
-        public List<ImageDTO> Images { get; set; } = new();
-        public List<ProductCategoryDTO> ProductCategories { get; set; } = new();
-        public List<ProductVariantDTO> ProductVariants { get; set; } = new();
+        public List<ImageDTO> Images { get; set; } = new List<ImageDTO>();
 
+        public List<ProductCategoryDTO> ProductCategories { get; set; } = new List<ProductCategoryDTO>();
+
+        public List<ProductVariantDTO> ProductVariants { get; set; } = new List<ProductVariantDTO>();
     }
     public class ImageDTO
     {
+        public int Id { get; set; } // opsiyonel ama update için gerekebilir
         public string ImageUrl { get; set; }
     }
     public class ProductCategoryDTO

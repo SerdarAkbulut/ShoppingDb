@@ -21,6 +21,7 @@ namespace ShoppingApi.Entity
         public decimal SubTotal { get; set; }
 
         public decimal DeliveryFee { get; set; }
+        public User User { get; set; }
         public string UserId { get; set; }
 
         public decimal GetTotal()
@@ -41,8 +42,7 @@ namespace ShoppingApi.Entity
         public Product Product { get; set; } = null!;
         public int ProductId { get; set; }
         public string ProductName { get; set; } = null!;
-
-        public string ProductImage { get; set; } = null!;
+        public string ProductImages { get; set; }
 
     }
     public enum OrderStatus

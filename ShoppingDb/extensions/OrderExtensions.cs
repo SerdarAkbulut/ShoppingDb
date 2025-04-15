@@ -9,7 +9,7 @@ namespace ShoppingApi.extensions
 {
     public static class OrderExtensions
     {
-        public static IQueryable<OrderDTO> OrderToDTO(this IQueryable<Order> query) // Düzeltildi
+        public static IQueryable<OrderDTO> OrderToDTO(this IQueryable<Order> query) 
         {
             return query.Select(x => new OrderDTO
             {
@@ -29,7 +29,7 @@ namespace ShoppingApi.extensions
                     OrderId = item.OrderId,
                     Price = item.Price,
                     ProductId = item.ProductId,
-                    ProductImage = item.ProductImage,
+                   ProductImage=item.ProductImages,
                     ProductName = item.ProductName,
                     Quantity = item.Quantity
                 }).ToList()
