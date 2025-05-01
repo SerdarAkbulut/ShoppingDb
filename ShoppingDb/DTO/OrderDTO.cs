@@ -8,9 +8,6 @@ namespace ShoppingApi.DTO
         public int Id { get; set; }
         public DateTime OrderDate { get; set; } = DateTime.Now;
 
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-
         public string Address { get; set; }
 
         public string Phone { get; set; }
@@ -27,16 +24,12 @@ namespace ShoppingApi.DTO
 
     }
 
-    public class OrderItemDTO
-    {
-        public int Id { get; set; }
-        public int Quantity { get; set; }
-        public int OrderId { get; set; }
-
-        public decimal Price { get; set; }
-        public int ProductId { get; set; }
-        public string ProductName { get; set; } = null!;
-
-        public string ProductImage { get; set; } = null!;
-    }
+    //public class OrderItemDTO
+    //{
+    //    public int Quantity { get; set; }
+    //    public int OrderId { get; set; }
+    //    public decimal Price { get; set; }
+    //    public int ProductId { get; set; }
+    //    public string Name { get; set; } = null!;
+    //}
 }

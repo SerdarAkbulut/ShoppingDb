@@ -13,24 +13,17 @@ namespace ShoppingApi.extensions
         {
             return query.Select(x => new OrderDTO
             {
-                Id = x.Id,
                 OrderDate = x.OrderDate,
-                FirstName = x.FirstName,
-                LastName = x.LastName,
-                Address = x.Address,
                 Phone = x.Phone,
                 UserId = x.UserId,
-                DeliveryFee = x.DeliveryFee,
                 SubTotal = x.SubTotal,
                 OrderStatus = x.OrderStatus,
                 OrderItems = x.OrderItems.Select(item => new OrderItemDTO
                 {
-                    Id = item.Id,
                     OrderId = item.OrderId,
                     Price = item.Price,
                     ProductId = item.ProductId,
-                   ProductImage=item.ProductImages,
-                    ProductName = item.ProductName,
+                    Name = item.Name,
                     Quantity = item.Quantity
                 }).ToList()
             });

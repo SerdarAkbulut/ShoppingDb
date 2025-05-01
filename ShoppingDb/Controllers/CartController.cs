@@ -1,8 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShoppingApi.Data;
 using ShoppingApi.DTO;
 using ShoppingApi.Entity;
+using System.Security.Claims;
 
 namespace ShoppingApi.Controllers
 {
@@ -17,18 +19,24 @@ namespace ShoppingApi.Controllers
             _context = context;
         }
 
-        // GET: api/cart/{userId}
-        [HttpGet("{userId}")]
-        public async Task<ActionResult<CartDTO>> GetCart(string userId)
+     
+        [HttpGet]
+        public async Task<ActionResult<CartDTO>> GetCart()
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
             var cart = await GetOrCreate(userId);
             return CartToDTO(cart);
         }
 
         // POST: api/cart/add?productId=1&quantity=2&userId=abc123
         [HttpPost("add")]
-        public async Task<ActionResult> AddItemToCart(int productId, int quantity, string userId)
+        public async Task<ActionResult> AddItemToCart(int productId, int quantity)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized();
             var cart = await GetOrCreate(userId);
 
             var product = await _context.Products.FirstOrDefaultAsync(i => i.Id == productId);
@@ -45,9 +53,13 @@ namespace ShoppingApi.Controllers
         }
 
         // DELETE: api/cart/delete?productId=1&quantity=1&userId=abc123
-        [HttpDelete("delete")]
-        public async Task<ActionResult> DeleteFromCart(int productId, int quantity, string userId)
+        [HttpDelete("deleteItem")]
+        [Authorize]
+        public async Task<ActionResult> DeleteFromCart(int productId, int quantity)
         {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+        return Unauthorized();
             var cart = await GetOrCreate(userId);
 
             cart.DeleteItem(productId, quantity);

@@ -49,15 +49,39 @@ namespace ShoppingApi.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-            var product = await _context.Products.FirstOrDefaultAsync(x => x.Id == id);
+            var product = await _context.Products
+                .Where(p => p.Id == id)
+                .Include(p => p.ProductCategories)
+                    .ThenInclude(pc => pc.Category)
+                .Select(p => new
+                {
+                    p.Id,
+                    p.Name,
+                    Categories = p.ProductCategories.Select(pc => new
+                    {
+                        pc.Category.Id,
+                        pc.Category.Name
+                    }),
+                    p.Description,
+                    p.Price,
+                    ProductVariants = p.ProductVariants.Select(pv => new
+                    {
+                        pv.Id,
+                        pv.Color,
+                        pv.Size
+                    }),
+                    Images = p.Images.Select(pi => new 
+                    { 
+pi.ImageUrl                    
+                    })
+                })
+                .FirstOrDefaultAsync();
+
             if (product == null)
             {
                 return NotFound();
             }
+
             return Ok(product);
         }
         [HttpGet("product-variant")]

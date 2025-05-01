@@ -24,19 +24,19 @@ namespace ShoppingApi.Entity
             }
         }
 
-        public void DeleteItem(int productId, int quantity)
-        {
-            var item = CartItems.Where(c => c.ProductId == productId).FirstOrDefault();
+    public void DeleteItem(int productId, int quantity)
+{
+    var item = CartItems.Where(c => c.ProductId == productId).FirstOrDefault();
 
-            if (item == null) return;
+    if (item == null) return;
 
-            item.Quantity -= quantity;
+    item.Quantity -= quantity;
 
-            if (item.Quantity == 0)
-            {
-                CartItems.Remove(item);
-            }
-        }
+    if (item.Quantity <= 0)
+    {
+        CartItems.Remove(item);
+    }
+}
     }
     public class CartItem
     {
