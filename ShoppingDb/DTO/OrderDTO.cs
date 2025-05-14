@@ -16,7 +16,7 @@ namespace ShoppingApi.DTO
 
         public List<OrderItemDTO> OrderItems { get; set; } = new();
 
-        public decimal SubTotal { get; set; }
+        public string SubTotal { get; set; }
 
         public decimal DeliveryFee { get; set; }
         public string UserId { get; set; }
@@ -24,12 +24,5 @@ namespace ShoppingApi.DTO
 
     }
 
-    //public class OrderItemDTO
-    //{
-    //    public int Quantity { get; set; }
-    //    public int OrderId { get; set; }
-    //    public decimal Price { get; set; }
-    //    public int ProductId { get; set; }
-    //    public string Name { get; set; } = null!;
-    //}
+ 
 }

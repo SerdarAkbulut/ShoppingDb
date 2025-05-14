@@ -63,7 +63,7 @@ namespace ShoppingApi.Controllers
                         pc.Category.Name
                     }),
                     p.Description,
-                    p.Price,
+                    price = p.Price.ToString("N2", new CultureInfo("tr-TR")),
                     ProductVariants = p.ProductVariants.Select(pv => new
                     {
                         pv.Id,
@@ -136,7 +136,7 @@ pi.ImageUrl
                 Name = product.Name,
                 Description = product.Description,
                 Price = product.Price,
-                IsActive = product.IsActive,
+                IsActive =true,
                 ProductVariants = product.ProductVariants.Select(pv => new ProductVariant
                 {
                     SizeId = pv.SizeId,
@@ -274,5 +274,71 @@ pi.ImageUrl
             return Ok(product);
         }
 
+        [HttpGet("category/{catId}/{page}")]
+        public async Task<IActionResult> GetCategoryProducts(int catId,int page)
+        {
+            var query = _context.Products
+         .Where(p => p.ProductCategories.Any(pc => pc.CategoryId == catId))
+          .Select(i => new
+          {
+              i.Id,
+              i.Name,
+              price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
+              i.Description,
+              productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
+              Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
+              ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList()
+          });
+            var totalItems = await query.CountAsync();
+          
+            var products = await query
+                .Skip((page - 1) * 2)
+                .Take(2)
+                .ToListAsync();
+            return Ok(products);
+        }
+
+        [HttpGet("home")]
+        public async Task<IActionResult> GetHomeProducts()
+        {
+            var products = await _context.Products
+                .Where(p=>p.IsActive==true).OrderByDescending(p=>p.Id)
+                  .Include(i => i.ProductCategories)
+                      .ThenInclude(i => i.Category)
+                  .Select(i => new
+                  {
+                      i.Id,
+                      i.Name,
+                      price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
+                      i.Description,
+                      productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
+                      Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
+                      ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList()
+                  })
+                  .ToListAsync();
+
+            return Ok(products);
+        }
+        [HttpGet("last")]
+        public async Task<IActionResult> GetLastProducts()
+        {
+            var products = await _context.Products
+                  .Include(i => i.ProductCategories)
+                      .ThenInclude(i => i.Category)
+                  .Select(i => new
+                  {
+                      i.Id,
+                      i.Name,
+                      price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
+                      i.Description,
+                      productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
+                      Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
+                      ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList()
+                  })
+                  .OrderByDescending(p=>p.Id).Take(5)
+                  .ToListAsync();
+
+            return Ok(products);
+        }
     }
 }

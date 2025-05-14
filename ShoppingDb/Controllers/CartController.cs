@@ -32,7 +32,7 @@ namespace ShoppingApi.Controllers
 
         // POST: api/cart/add?productId=1&quantity=2&userId=abc123
         [HttpPost("add")]
-        public async Task<ActionResult> AddItemToCart(int productId, int quantity)
+        public async Task<ActionResult> AddItemToCart(int productId, int quantity, int colorId, int sizeId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -42,8 +42,8 @@ namespace ShoppingApi.Controllers
             var product = await _context.Products.FirstOrDefaultAsync(i => i.Id == productId);
             if (product == null)
                 return NotFound("The product is not in the database");
-
-            cart.AddItem(product, quantity);
+          
+            cart.AddItem(product, quantity, colorId, sizeId);
             var result = await _context.SaveChangesAsync() > 0;
 
             if (result)
@@ -76,7 +76,11 @@ namespace ShoppingApi.Controllers
         {
             var cart = await _context.Carts
                 .Include(i => i.CartItems)
-                .ThenInclude(i => i.Product)
+                    .ThenInclude(ci => ci.Product)
+                .Include(i => i.CartItems)
+                    .ThenInclude(ci => ci.color)
+                .Include(i => i.CartItems)
+                    .ThenInclude(ci => ci.size)
                 .FirstOrDefaultAsync(i => i.userId == userId);
 
             if (cart == null)
@@ -103,8 +107,13 @@ namespace ShoppingApi.Controllers
                     Price = item.Product?.Price,
                     Quantity = item.Quantity,
                     ImageUrl = item.Product?.Images.FirstOrDefault()?.ImageUrl,
+                   color=item.color,
+                   size=item.size
                 }).ToList()
             };
         }
+
+
     }
+
 }

@@ -10,13 +10,23 @@ namespace ShoppingApi.Entity
      
         public List<CartItem> CartItems { get; set; } = new();
 
-        public void AddItem(Product product, int quantity)
+
+        public void AddItem(Product product, int quantity, int colorId, int sizeId)
         {
-            var item = CartItems.Where(c => c.ProductId == product.Id).FirstOrDefault();
+            var item = CartItems.FirstOrDefault(c =>
+                c.Product.Id == product.Id &&
+                c.colorId == colorId &&
+                c.sizeId == sizeId);
 
             if (item == null)
             {
-                CartItems.Add(new CartItem { Product = product, Quantity = quantity });
+                CartItems.Add(new CartItem
+                {
+                    Product = product,
+                    Quantity = quantity,
+                    colorId = colorId,
+                    sizeId = sizeId
+                });
             }
             else
             {
@@ -24,7 +34,7 @@ namespace ShoppingApi.Entity
             }
         }
 
-    public void DeleteItem(int productId, int quantity)
+        public void DeleteItem(int productId, int quantity)
 {
     var item = CartItems.Where(c => c.ProductId == productId).FirstOrDefault();
 
@@ -45,7 +55,10 @@ namespace ShoppingApi.Entity
         public Product Product { get; set; }
         public int CartId { get; set; }
         public Cart Cart {  get; set; }
-
+        public  Color color { get; set; }
+        public int colorId { get; set; }
+        public Size size { get; set; }
+        public int sizeId { get; set; }
         public int Quantity { get; set; }
     }
 }

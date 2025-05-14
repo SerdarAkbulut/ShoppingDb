@@ -16,7 +16,7 @@ namespace ShoppingApi.extensions
                 OrderDate = x.OrderDate,
                 Phone = x.Phone,
                 UserId = x.UserId,
-                SubTotal = x.SubTotal,
+                SubTotal = x.SubTotal.ToString("N2", new System.Globalization.CultureInfo("tr-TR")),
                 OrderStatus = x.OrderStatus,
                 OrderItems = x.OrderItems.Select(item => new OrderItemDTO
                 {

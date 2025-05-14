@@ -16,7 +16,10 @@ namespace ShoppingApi.DTO
         public int? ProductId { get;  set; }
         public String? Name { get; set; }
         public decimal? Price { get; set; }
-    public String? ImageUrl { get; set; }    
+
+        public Size size { get; set; }
+        public Color color { get; set; }
+        public String? ImageUrl { get; set; }    
         public int Quantity { get; set; }
     }
 }

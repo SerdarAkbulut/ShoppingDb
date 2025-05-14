@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShoppingApi.Data;
 
@@ -11,9 +12,11 @@ using ShoppingApi.Data;
 namespace ShoppingApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250503143244_CartItems")]
+    partial class CartItems
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -215,21 +218,19 @@ namespace ShoppingApi.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
-                    b.Property<int>("colorId")
-                        .HasColumnType("int");
+                    b.Property<string>("color")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("sizeId")
-                        .HasColumnType("int");
+                    b.Property<string>("size")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CartItemId");
 
                     b.HasIndex("CartId");
 
                     b.HasIndex("ProductId");
-
-                    b.HasIndex("colorId");
-
-                    b.HasIndex("sizeId");
 
                     b.ToTable("CartItem");
                 });
@@ -910,25 +911,9 @@ namespace ShoppingApi.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ShoppingApi.Entity.Color", "color")
-                        .WithMany()
-                        .HasForeignKey("colorId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ShoppingApi.Entity.Size", "size")
-                        .WithMany()
-                        .HasForeignKey("sizeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.Navigation("Cart");
 
                     b.Navigation("Product");
-
-                    b.Navigation("color");
-
-                    b.Navigation("size");
                 });
 
             modelBuilder.Entity("ShoppingApi.Entity.Image", b =>

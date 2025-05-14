@@ -20,7 +20,7 @@ builder.Services.AddDbContext<DataContext>(options =>
     var connectionString = config.GetConnectionString("defaultConnection");
     options.UseSqlServer(connectionString);
 });
-builder.Services.AddOpenApi();
+//builder.Services.AddOpenApi();
 builder.Services.AddCors();
 builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
 
@@ -72,7 +72,7 @@ app.UseMiddleware<ExceptionHandling>();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    //app.MapOpenApi();
     app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "Demo API");
     });
 

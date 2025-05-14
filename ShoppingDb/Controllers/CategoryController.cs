@@ -22,5 +22,6 @@ namespace ShoppingApi.Controllers
             var categories = await _context.Categories.ToListAsync();
             return Ok(categories);
         }
+      
     }
 }
