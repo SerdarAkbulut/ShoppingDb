@@ -34,16 +34,24 @@ namespace ShoppingApi.Controllers
 
             var products = await _context.Products
                 .OrderByDescending(p => p.Id)
-                .Include(i => i.ProductCategories)
-                  
-                .Include(i => i.Images)
+                .Include(p => p.ProductCategories)
+                .Include(p => p.Images)
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize)
+                .Take(pageSize + 1) // +1 alarak devamı olup olmadığını kontrol edeceğiz
                 .ToListAsync();
+
+            bool hasNextPage = products.Count > pageSize;
+
+            if (hasNextPage)
+                products.RemoveAt(pageSize);
 
             var productDTOs = _mapper.Map<List<GETProducts>>(products);
 
-            return Ok(productDTOs);
+            return Ok(new
+            {
+                products = productDTOs,
+                hasNextPage = hasNextPage
+            });
         }
 
         [HttpGet("admin-products")]
@@ -301,25 +309,34 @@ pi.ImageUrl
         }
 
         [HttpGet("category/{catId}/{page}")]
-        public async Task<IActionResult> GetCategoryProducts(int catId,int page)
+        public async Task<IActionResult> GetCategoryProducts(int catId, int page)
         {
             var query = _context.Products
-         .Where(p => p.ProductCategories.Any(pc => pc.CategoryId == catId))
-          .Select(i => new
-          {
-              i.Id,
-              i.Name,
-              price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
-              i.Description,
-              Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
-          });
-      
-          
+                .Where(p => p.ProductCategories.Any(pc => pc.CategoryId == catId))
+                .Select(i => new
+                {
+                    i.Id,
+                    i.Name,
+                    price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
+                    i.Description,
+                    Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
+                });
+
             var products = await query
                 .Skip((page - 1) * 2)
-                .Take(2)
+                .Take(3) // ✅ Sayfa başı 2 ürün + 1 fazladan ürün al
                 .ToListAsync();
-            return Ok(products);
+
+            bool hasNextPage = products.Count > 2;
+
+            if (hasNextPage)
+                products.RemoveAt(2); // ✅ Fazlalığı at
+
+            return Ok(new
+            {
+                products,
+                hasNextPage
+            });
         }
 
         [HttpGet("home")]

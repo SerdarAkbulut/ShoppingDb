@@ -155,6 +155,7 @@ namespace ShoppingApi.Controllers
             }
         }
 
+
         [HttpGet("installment-options/{bin}/{price}")]
         public async Task<ActionResult> CartControl(string bin, string price)
         {
@@ -174,20 +175,38 @@ namespace ShoppingApi.Controllers
             var result= await InstallmentInfo.Retrieve(request, options);
             return Ok(result);
         }
+
         private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId,Entity.Address address,string paymentBuyer,string emailBuyer ,CreateOrderDTO createOrderDTO)
         {
+
+      
+
             Options options = new Options();
             options.ApiKey = _config["PaymentAPI:APIKey"];
             options.SecretKey = _config["PaymentAPI:SecretKey"];
             options.BaseUrl = "https://sandbox-api.iyzipay.com";
 
+            var installmentRequest = new RetrieveInstallmentInfoRequest
+            {
+                Locale = "tr",
+                BinNumber = card.CardNumber.Substring(0, 6),
+                ConversationId = Guid.NewGuid().ToString(),
+                Price = price
+            };
+
+
+            var installmentResult = await InstallmentInfo.Retrieve(installmentRequest, options);
+
+            var selectedInstallment = installmentResult.InstallmentDetails
+                .FirstOrDefault()?.InstallmentPrices
+                .FirstOrDefault(i => i.InstallmentNumber == card.Installment);
             CreatePaymentRequest request = new CreatePaymentRequest();
             request.Locale = Locale.TR.ToString();
             request.ConversationId = "123456789";
             request.Price = price;
-            request.PaidPrice = price;
+            request.PaidPrice = selectedInstallment.TotalPrice.ToString(CultureInfo.InvariantCulture); ;
             request.Currency = Currency.TRY.ToString();
-            request.Installment = 1;
+            request.Installment = card.Installment;
             request.BasketId = orderId;
             request.PaymentChannel = PaymentChannel.WEB.ToString();
             request.PaymentGroup = PaymentGroup.PRODUCT.ToString();
@@ -239,8 +258,9 @@ namespace ShoppingApi.Controllers
                     Id = orderItem.ProductId.ToString(),
                     Name = orderItem.Name,
                     ItemType = BasketItemType.PHYSICAL.ToString(),
-                    Price=orderItem.Price.ToString("0.00",CultureInfo.InvariantCulture),
+                    Price = (orderItem.Price * orderItem.Quantity).ToString("0.00", CultureInfo.InvariantCulture),
                     Category1 = string.Join(", ", GetProductCategories(orderItem.ProductId)),
+                   
 
                 };
                 basketItems.Add(basketItem);
