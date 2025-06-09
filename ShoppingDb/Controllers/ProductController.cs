@@ -10,6 +10,7 @@ using dotenv.net;
 using System.Text.RegularExpressions;
 using System.Net;
 using System.Globalization;
+using AutoMapper;
 namespace ShoppingApi.Controllers
 {
     [ApiController]
@@ -20,28 +21,53 @@ namespace ShoppingApi.Controllers
     {
 
         private readonly DataContext _context;
-        public ProductController(DataContext context)
+        private readonly IMapper _mapper;
+        public ProductController(DataContext context,IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
         [HttpGet]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts([FromQuery] int page)
         {
-            
+            int pageSize = 12;
+
             var products = await _context.Products
+                .OrderByDescending(p => p.Id)
                 .Include(i => i.ProductCategories)
-                    .ThenInclude(i => i.Category)
-                .Select(i => new
-                {
-                    i.Id,
-                    i.Name,
-                    price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
-                    i.Description,
-                    productVariants = i.ProductVariants.Select(v => new { color=v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size=v.Size.Name, v.Id }).ToList(),
-                    Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
-                    ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name,pc.CategoryId ,pc.Id}).ToList()
-                })
+                  
+                .Include(i => i.Images)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            var productDTOs = _mapper.Map<List<GETProducts>>(products);
+
+            return Ok(productDTOs);
+        }
+
+        [HttpGet("admin-products")]
+        public async Task<IActionResult> GetProductsForAdmin()
+        {
+
+
+            var products = await _context.Products
+                 .Include(i => i.ProductCategories)
+                     .ThenInclude(i => i.Category)
+                 .Select(i => new
+                 {
+                     i.Id,
+                     i.Name,
+                     price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
+                     i.Description,
+                     productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
+                     Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
+                     ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList(),
+                     i.IsActive
+                     
+                 })
+                 .ToListAsync();
+
 
             return Ok(products);
         }
@@ -190,7 +216,7 @@ pi.ImageUrl
             return Ok(new { message = "Ürün ve görseller başarıyla silindi." });
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDTO productDTO)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDTO? productDTO)
         {
             DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
             var cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
@@ -285,11 +311,9 @@ pi.ImageUrl
               i.Name,
               price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
               i.Description,
-              productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
               Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
-              ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList()
           });
-            var totalItems = await query.CountAsync();
+      
           
             var products = await query
                 .Skip((page - 1) * 2)
@@ -323,22 +347,38 @@ pi.ImageUrl
         public async Task<IActionResult> GetLastProducts()
         {
             var products = await _context.Products
-                  .Include(i => i.ProductCategories)
-                      .ThenInclude(i => i.Category)
-                  .Select(i => new
-                  {
-                      i.Id,
-                      i.Name,
-                      price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
-                      i.Description,
-                      productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
-                      Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
-                      ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList()
-                  })
+               .Include(p => p.ProductCategories)
+                .Include(p => p.Images)
                   .OrderByDescending(p=>p.Id).Take(5)
                   .ToListAsync();
+                  var productDTOs=_mapper.Map<List<GETProducts>>(products);
 
-            return Ok(products);
+            return Ok(productDTOs);
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchProducts([FromQuery] string q)
+        {
+            var products = await _context.Products
+                .Include(p => p.ProductCategories)
+                .Include(p => p.Images)
+                .Where(p => p.Name.ToLower().Contains(q.ToLower()) ||  p.Description.ToLower().Contains(q.ToLower())) 
+                .ToListAsync();
+
+            var productDTOs = _mapper.Map<List<GETProducts>>(products);
+            return Ok(productDTOs);
+        }
+        [HttpPost("add-best-sellers/{id}")]
+        public async Task<IActionResult> AddBestSellers(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+                return NotFound(new { message = "Ürün bulunamadı." });
+
+            product.IsActive = !product.IsActive;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Ürün durumu güncellendi.", product });
         }
     }
 }

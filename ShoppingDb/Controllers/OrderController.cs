@@ -138,6 +138,8 @@ namespace ShoppingApi.Controllers
                         return BadRequest(new { error = "Ödeme işlemi esnasında genel bir hata oluştu" });
                     case "1":
                         return BadRequest(new { error = "Sistem hatası oluştu" });
+                    case "13":
+                        return BadRequest(new { error = "Kart tarih bilgisi eşleşmiyor" });
                     default:
                         return BadRequest(new { error = "Bilinmeyen bir hata oluştu: " });
                 }
@@ -153,6 +155,25 @@ namespace ShoppingApi.Controllers
             }
         }
 
+        [HttpGet("installment-options/{bin}/{price}")]
+        public async Task<ActionResult> CartControl(string bin, string price)
+        {
+            var request = new RetrieveInstallmentInfoRequest
+            {
+                Locale = "tr",
+                BinNumber = bin,
+                ConversationId = Guid.NewGuid().ToString(),
+                Price = price
+            };
+            var options = new Options
+            {
+                ApiKey = _config["PaymentAPI:APIKey"],
+                SecretKey = _config["PaymentAPI:SecretKey"],
+                BaseUrl = "https://sandbox-api.iyzipay.com"
+            };
+            var result= await InstallmentInfo.Retrieve(request, options);
+            return Ok(result);
+        }
         private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId,Entity.Address address,string paymentBuyer,string emailBuyer ,CreateOrderDTO createOrderDTO)
         {
             Options options = new Options();
@@ -245,6 +266,8 @@ namespace ShoppingApi.Controllers
                 .Select(pc => pc.Category.Name)
                 .ToList();
         }
+     
+
 
     }
 }

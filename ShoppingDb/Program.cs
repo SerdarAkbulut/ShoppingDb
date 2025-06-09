@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using ShoppingApi.Data;
 using ShoppingApi.Entity;
+using ShoppingApi.Mapping;
 using ShoppingApi.Middlewares;
 using ShoppingApi.Services;
 using System.Text;
@@ -66,6 +67,7 @@ builder.Services.AddAuthentication(options => {
 
 
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandling>();
