@@ -11,6 +11,8 @@ using System.Text.RegularExpressions;
 using System.Net;
 using System.Globalization;
 using AutoMapper;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
 namespace ShoppingApi.Controllers
 {
     [ApiController]
@@ -22,10 +24,12 @@ namespace ShoppingApi.Controllers
 
         private readonly DataContext _context;
         private readonly IMapper _mapper;
-        public ProductController(DataContext context,IMapper mapper)
+        private readonly UserManager<User> _userManager;
+        public ProductController(DataContext context,IMapper mapper, UserManager<User> userManager)
         {
             _context = context;
             _mapper = mapper;
+       _userManager = userManager;
         }
         [HttpGet]
         public async Task<IActionResult> GetProducts([FromQuery] int page)
@@ -57,7 +61,12 @@ namespace ShoppingApi.Controllers
         [HttpGet("admin-products")]
         public async Task<IActionResult> GetProductsForAdmin()
         {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
+            if(role != "Admin")
+            {
+                return BadRequest();
+            }
 
             var products = await _context.Products
                  .Include(i => i.ProductCategories)
@@ -91,13 +100,15 @@ namespace ShoppingApi.Controllers
                 {
                     p.Id,
                     p.Name,
+                    p.Discount,
+
                     Categories = p.ProductCategories.Select(pc => new
                     {
                         pc.Category.Id,
                         pc.Category.Name
                     }),
                     p.Description,
-                    price = p.Price.ToString("N2", new CultureInfo("tr-TR")),
+                    price = p.Price,
                     ProductVariants = p.ProductVariants.Select(pv => new
                     {
                         pv.Id,
@@ -320,17 +331,18 @@ pi.ImageUrl
                     price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
                     i.Description,
                     Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
+                    i.Discount
                 });
 
             var products = await query
                 .Skip((page - 1) * 2)
-                .Take(3) // ✅ Sayfa başı 2 ürün + 1 fazladan ürün al
+                .Take(2+1) 
                 .ToListAsync();
 
             bool hasNextPage = products.Count > 2;
 
             if (hasNextPage)
-                products.RemoveAt(2); // ✅ Fazlalığı at
+                products.RemoveAt(2); 
 
             return Ok(new
             {
@@ -345,20 +357,12 @@ pi.ImageUrl
             var products = await _context.Products
                 .Where(p=>p.IsActive==true).OrderByDescending(p=>p.Id)
                   .Include(i => i.ProductCategories)
-                      .ThenInclude(i => i.Category)
-                  .Select(i => new
-                  {
-                      i.Id,
-                      i.Name,
-                      price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
-                      i.Description,
-                      productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
-                      Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
-                      ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList()
-                  })
+                    .Include(p=>p.Images)
+            
                   .ToListAsync();
+            var productDTOs = _mapper.Map<List<GETProducts>>(products);
 
-            return Ok(products);
+            return Ok(productDTOs);
         }
         [HttpGet("last")]
         public async Task<IActionResult> GetLastProducts()
@@ -396,6 +400,29 @@ pi.ImageUrl
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Ürün durumu güncellendi.", product });
+        }
+        [HttpPut("add-discount/{id}/{discount}")]
+        public async Task<IActionResult> AddDiscount(int id,string discount)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+                return NotFound(new { message = "Ürün Bulunamadı" });
+            product.Discount =   discount;
+            _context.SaveChangesAsync();
+            return Ok(product);
+            
+        }
+        [HttpDelete("delete-discount/{id}")]
+        public async Task<IActionResult> DeleteDiscount(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+            if (product == null)
+                return NotFound(new { message = "Ürün Bulunamadı" });
+            product.Discount = null;
+            _context.SaveChangesAsync();
+
+            return Ok(product);
+
         }
     }
 }

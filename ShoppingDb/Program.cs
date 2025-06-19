@@ -26,7 +26,6 @@ builder.Services.AddCors();
 builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
 
 
-
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
 {
     options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
@@ -67,6 +66,11 @@ builder.Services.AddAuthentication(options => {
 
 
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+{
+    options.TokenLifespan = TimeSpan.FromMinutes(2); // sadece şifre sıfırlama tokeni için geçerli
+});
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 var app = builder.Build();
 
@@ -86,6 +90,7 @@ app.UseCors(opt =>
       opt.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
 
 });
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

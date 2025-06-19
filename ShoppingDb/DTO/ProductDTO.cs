@@ -12,7 +12,7 @@ namespace ShoppingDb.DTO
         public string? Description { get; set; }
 
         public decimal Price { get; set; }
-
+        public string? Discount { get; set; }
         public bool IsActive { get; set; }
 
         public List<ImageDTO> Images { get; set; } = new List<ImageDTO>();
@@ -64,6 +64,7 @@ namespace ShoppingDb.DTO
 
         public string? Description { get; set; }
 
+        public string? Discount { get; set; }
         public string Price { get; set; }
         public List<ImageDTO> Images { get; set; } = new List<ImageDTO>();
     }

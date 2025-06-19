@@ -16,9 +16,8 @@ namespace ShoppingApi.Mapping
             CreateMap<ProductVariant, ProductVariantDTO>();
             CreateMap<Color, ColorDTO>();
             CreateMap<Size, SizeDTO>();
-            CreateMap<Product, GETProducts>()
-       .ForMember(dest => dest.Price, opt =>
-           opt.MapFrom(src => src.Price.ToString("N2", new CultureInfo("tr-TR"))));
+            CreateMap<Product, GETProducts>();
+    
         }
     }
 }

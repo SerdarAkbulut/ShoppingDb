@@ -119,7 +119,7 @@ var role=roles.FirstOrDefault();
             });
         }
 
-        private string TranslateError(string errorCode)
+        public string TranslateError(string errorCode)
         {
             return errorCode switch
             {

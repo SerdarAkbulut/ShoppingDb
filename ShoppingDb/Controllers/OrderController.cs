@@ -37,7 +37,7 @@ namespace ShoppingApi.Controllers
             }
             return await _context.Orders.Include(x => x.OrderItems)
          .OrderToDTO()
-                .Where(x => x.UserId == userId)
+                .Where(x => x.UserId == userId).OrderByDescending(x => x.OrderDate)
                 .ToListAsync(); ;
         }
 

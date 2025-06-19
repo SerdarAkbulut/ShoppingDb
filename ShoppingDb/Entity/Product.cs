@@ -19,11 +19,14 @@ namespace ShoppingDb.Entity
 
         public bool IsActive { get; set; }
 
+        public string? Discount { get; set; }
+
        
         public List<Image> Images { get; set; } = new List<Image>();
         
         public ICollection<ProductCategory> ProductCategories { get; set; }
        public ICollection<ProductVariant> ProductVariants { get; set; }
+
 
     }
 }

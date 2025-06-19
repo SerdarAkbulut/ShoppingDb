@@ -28,7 +28,7 @@ namespace ShoppingApi.DTO
         public string ExpireMonth { get; set; } 
         public string ExpireYear { get; set; }
         public string Cvc { get; set; }
-        public int Installment { get; set; } = 1; 
+        public int Installment { get; set; }  
     }
 
     public class OrderItemDTO
