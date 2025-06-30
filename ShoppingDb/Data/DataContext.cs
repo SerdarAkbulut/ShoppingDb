@@ -20,6 +20,7 @@ namespace ShoppingApi.Data
         public DbSet<Category> Categories { get; set; }
         public DbSet<Color> Colors { get; set; }
         public DbSet<Size> Sizes { get; set; }
+        public DbSet<Slider> Sliders { get; set; } 
     public DbSet<ProductVariant> ProductVariants { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

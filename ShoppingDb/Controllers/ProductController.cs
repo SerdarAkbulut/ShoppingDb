@@ -25,11 +25,13 @@ namespace ShoppingApi.Controllers
         private readonly DataContext _context;
         private readonly IMapper _mapper;
         private readonly UserManager<User> _userManager;
-        public ProductController(DataContext context,IMapper mapper, UserManager<User> userManager)
+        private readonly IConfiguration _configuration;
+        public ProductController(DataContext context,IMapper mapper, UserManager<User> userManager, IConfiguration configuration)
         {
             _context = context;
             _mapper = mapper;
        _userManager = userManager;
+            _configuration = configuration;
         }
         [HttpGet]
         public async Task<IActionResult> GetProducts([FromQuery] int page)
@@ -144,8 +146,8 @@ pi.ImageUrl
         [HttpPost]
         public async Task<IActionResult> CreateProduct([FromBody] ProductDTO product)
         {
-            DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
-            var cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+            var cloudinaryUrl = _configuration["Cloudinary:CloudinaryUrl"];
+            var cloudinary = new Cloudinary(cloudinaryUrl);
             cloudinary.Api.Secure = true;
 
             var imageList = new List<Image>();
@@ -215,7 +217,8 @@ pi.ImageUrl
             {
                 if (!string.IsNullOrEmpty(image.PublicId))
                 {
-                    var cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+                    var cloudinaryUrl = _configuration["Cloudinary:CloudinaryUrl"];
+                    var cloudinary = new Cloudinary(cloudinaryUrl);
                     cloudinary.Api.Secure = true;
                     var deletionParams = new DeletionParams(image.PublicId);
                     var deletionResult = cloudinary.Destroy(deletionParams);
@@ -237,8 +240,8 @@ pi.ImageUrl
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDTO? productDTO)
         {
-            DotEnv.Load(options: new DotEnvOptions(probeForEnv: true));
-            var cloudinary = new Cloudinary(Environment.GetEnvironmentVariable("CLOUDINARY_URL"));
+            var cloudinaryUrl = _configuration["Cloudinary:CloudinaryUrl"];
+            var cloudinary = new Cloudinary(cloudinaryUrl);
             cloudinary.Api.Secure = true;
 
             var product = await _context.Products
@@ -377,17 +380,26 @@ pi.ImageUrl
             return Ok(productDTOs);
         }
 
-        [HttpGet("search")]
-        public async Task<IActionResult> SearchProducts([FromQuery] string q)
+        [HttpGet("search/{page}")]
+        public async Task<IActionResult> SearchProducts([FromQuery] string q,int page)
         {
-            var products = await _context.Products
+            var query =  _context.Products
                 .Include(p => p.ProductCategories)
                 .Include(p => p.Images)
-                .Where(p => p.Name.ToLower().Contains(q.ToLower()) ||  p.Description.ToLower().Contains(q.ToLower())) 
-                .ToListAsync();
-
+                .Where(p => p.Name.ToLower().Contains(q.ToLower()) || p.Description.ToLower().Contains(q.ToLower()));
+               
+            var products = await query.Skip((page - 1) * 10).Take(10 + 1).ToListAsync();
             var productDTOs = _mapper.Map<List<GETProducts>>(products);
-            return Ok(productDTOs);
+            bool hasNextPage = products.Count > 10;
+
+            if (hasNextPage)
+                products.RemoveAt(2);
+
+            return Ok(new
+            {
+                products,
+                hasNextPage
+            });
         }
         [HttpPost("add-best-sellers/{id}")]
         public async Task<IActionResult> AddBestSellers(int id)

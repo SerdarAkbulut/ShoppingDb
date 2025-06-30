@@ -9,6 +9,7 @@ namespace ShoppingApi.Services
     }
     public class EmailService: IEmailService
     {
+
         private readonly IConfiguration _configuration;
         public EmailService(IConfiguration configuration)
         {
@@ -20,11 +21,11 @@ namespace ShoppingApi.Services
             var smtpClient = new SmtpClient("smtp.gmail.com") // örneğin smtp.gmail.com
             {
                 Port = 587,
-                Credentials = new NetworkCredential("serdar61of@gmail.com", "cgxb dbhn dzox bkpt"),
+                Credentials = new NetworkCredential(_configuration["EmailService:Email"], _configuration["EmailService:Password"]),
                 EnableSsl = true,
             };
 
-            var mailMessage = new MailMessage("serdar61of@gmail.com", toEmail, subject, message);
+            var mailMessage = new MailMessage(_configuration["EmailService:Email"], toEmail, subject, message);
             mailMessage.IsBodyHtml = true;
 
             await smtpClient.SendMailAsync(mailMessage);

@@ -69,7 +69,7 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
-    options.TokenLifespan = TimeSpan.FromMinutes(2); // sadece şifre sıfırlama tokeni için geçerli
+    options.TokenLifespan = TimeSpan.FromHours(2); 
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 var app = builder.Build();

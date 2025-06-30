@@ -6,6 +6,7 @@ using ShoppingApi.Data;
 using ShoppingApi.DTO;
 using ShoppingApi.Entity;
 using ShoppingApi.Services;
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
 
@@ -147,8 +148,13 @@ namespace ShoppingApi.Controllers
         }
 
         [HttpPost("reset-password")]
-        public async Task<IActionResult> ResetPassword(ResetPasswordDto model)
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto model)
         {
+
+
+            if (model.NewPassword != model.ConfirmPassword)
+                return BadRequest("Yeni şifre ve tekrarı uyuşmuyor.");
+
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
                 return BadRequest("Kullanıcı bulunamadı.");
@@ -156,11 +162,19 @@ namespace ShoppingApi.Controllers
             var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
 
             if (!result.Succeeded)
-                return BadRequest(  result.Errors);
+            {
+                var errorMessages = result.Errors.Select(e => new
+                {
+                    code = e.Code,
+                    message = TranslateError(e.Code)
+                }).ToList();
 
-            return Ok(new { code=200, message="Şifre başarıyla güncellendi." });
+                return BadRequest(errorMessages);
+            }
+
+            return Ok(new { code = 200, message = "Şifre başarıyla güncellendi." });
         }
-       [HttpGet("check-token")]
+        [HttpGet("check-token")]
         public async Task<IActionResult> ChechToken([FromQuery] CheckTokenDto model)
         {
             var user = await _userManager.FindByEmailAsync(model.Email);

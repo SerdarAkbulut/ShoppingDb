@@ -81,13 +81,15 @@ var role=roles.FirstOrDefault();
                 });
             }
 
-
+            Random random = new Random();
             var user = new User
             {
                 
-                Name=model.UserName,
-                UserName = model.UserName,
-                Email = model.Email
+                Name=model.Name,
+                UserName = model.Name+random.Next(1,999999999),
+                Email = model.Email,
+                PhoneNumber=model.Phone
+                
             };
 
            
