@@ -43,7 +43,7 @@ namespace ShoppingApi.Controllers
                 .Include(p => p.ProductCategories)
                 .Include(p => p.Images)
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize + 1) // +1 alarak devamı olup olmadığını kontrol edeceğiz
+                .Take(pageSize + 1) 
                 .ToListAsync();
 
             bool hasNextPage = products.Count > pageSize;

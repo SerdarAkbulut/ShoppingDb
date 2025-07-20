@@ -101,13 +101,14 @@ namespace ShoppingApi.Controllers
 
             };
            //payment buyer
-           var paymentBuyer= await _context.Users.Where(i=>i.Id==order.UserId).Select(i => i.UserName).FirstOrDefaultAsync();
+           var paymentBuyerName= await _context.Users.Where(i=>i.Id==order.UserId).Select(i => i.Name).FirstOrDefaultAsync();
+           var paymentBuyerSurName= await _context.Users.Where(i=>i.Id==order.UserId).Select(i => i.SurName).FirstOrDefaultAsync();
             //email buyer 
             var emailBuyer = await _context.Users.Where(i => i.Id == order.UserId).Select(i => i.Email).FirstOrDefaultAsync();
 
             var card = createOrderDTO.Card;
             string formattedTotal = subTotal.ToString("0.00", CultureInfo.InvariantCulture);
-         var paymentResult=   await ProcessPayment(card, formattedTotal, order.Id.ToString(),orderAddress,paymentBuyer,emailBuyer,createOrderDTO );
+         var paymentResult=   await ProcessPayment(card, formattedTotal, order.Id.ToString(),orderAddress,paymentBuyerName,paymentBuyerSurName,emailBuyer,createOrderDTO );
 
 
             if (paymentResult.Status != "success")
@@ -176,7 +177,7 @@ namespace ShoppingApi.Controllers
             return Ok(result);
         }
 
-        private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId,Entity.Address address,string paymentBuyer,string emailBuyer ,CreateOrderDTO createOrderDTO)
+        private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId,Entity.Address address,string paymentBuyerName,string paymentBuyerSurName, string emailBuyer ,CreateOrderDTO createOrderDTO)
         {
 
       
@@ -222,8 +223,8 @@ namespace ShoppingApi.Controllers
 
             Buyer buyer = new Buyer();
             buyer.Id = address.UserId;
-            buyer.Name = paymentBuyer;
-            buyer.Surname = paymentBuyer;
+            buyer.Name = paymentBuyerName;
+            buyer.Surname = paymentBuyerSurName;
             buyer.GsmNumber = address.Phone;
             buyer.Email = emailBuyer;
             buyer.RegistrationAddress = address.FullAddress;

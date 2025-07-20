@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using ShoppingApi.DTO;
 using ShoppingApi.Entity;
 using ShoppingApi.Services;
@@ -66,6 +67,16 @@ var role=roles.FirstOrDefault();
         [HttpPost("register")]
         public async Task<ActionResult> CreateUser([FromBody] RegisterDTO model)
         {
+
+            if(model.AydinlatmaMetni==false && model.UyelikSozlesmesi==false)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Lütfen sözleşmeleri kabul ediniz.",
+                    
+                });
+            }
             if (!ModelState.IsValid)
             {
                 var modelErrors = ModelState.Values
@@ -80,12 +91,12 @@ var role=roles.FirstOrDefault();
                     errors = modelErrors
                 });
             }
-
             Random random = new Random();
             var user = new User
             {
                 
                 Name=model.Name,
+                SurName = model.SurName,
                 UserName = model.Name+random.Next(1,999999999),
                 Email = model.Email,
                 PhoneNumber=model.Phone
@@ -106,7 +117,7 @@ var role=roles.FirstOrDefault();
                 });
             }
 
-            // Identity hata mesajlarını çevirerek döndür
+           
             var errorMessages = result.Errors.Select(e => new
             {
                 code = e.Code,

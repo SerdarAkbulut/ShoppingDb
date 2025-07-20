@@ -8,21 +8,32 @@ using ShoppingApi.Mapping;
 using ShoppingApi.Middlewares;
 using ShoppingApi.Services;
 using System.Text;
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddDbContext<DataContext>(options =>
 {
     var config=builder.Configuration;
     var connectionString = config.GetConnectionString("defaultConnection");
     options.UseSqlServer(connectionString);
 });
-//builder.Services.AddOpenApi();
-builder.Services.AddCors();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevCorsPolicy", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+
+    options.AddPolicy("ProdCorsPolicy", policy =>
+    {
+        policy.WithOrigins("https://www.famelinmodayazici.com.tr/") 
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
 
 
@@ -41,7 +52,6 @@ builder.Services.Configure<IdentityOptions>(options =>
 
     options.User.RequireUniqueEmail = true;
 
-    // Burada bo�luk karakteri dahil edildi
     options.User.AllowedUserNameCharacters =
         "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._@+ / ";
 });
@@ -75,16 +85,21 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 var app = builder.Build();
 
 app.UseMiddleware<ExceptionHandling>();
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (!app.Environment.IsDevelopment())
 {
     //app.MapOpenApi();
     app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "Demo API");
     });
 
 }
+else
+{
+    app.UseDeveloperExceptionPage();
+}
 
 app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
 app.UseCors(opt =>
 {
       opt.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
@@ -94,6 +109,5 @@ app.UseCors(opt =>
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-app.UseHttpsRedirection();
 SeedData.Initialize(app);
 app.Run();

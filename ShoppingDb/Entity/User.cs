@@ -5,6 +5,7 @@ namespace ShoppingApi.Entity
     public class User : IdentityUser
     {
         public string Name { get; set; }
+        public string SurName { get; set; }
         public List<Address> Addresses { get; set; } = new ();
     }
 }
