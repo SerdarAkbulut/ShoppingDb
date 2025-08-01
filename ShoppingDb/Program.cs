@@ -14,27 +14,22 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddDbContext<DataContext>(options =>
 {
-    var config=builder.Configuration;
+    var config = builder.Configuration;
     var connectionString = config.GetConnectionString("defaultConnection");
     options.UseSqlServer(connectionString);
 });
+var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>();
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("DevCorsPolicy", policy =>
+    options.AddPolicy("DynamicCorsPolicy", policy =>
     {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-
-    options.AddPolicy("ProdCorsPolicy", policy =>
-    {
-        policy.WithOrigins("https://www.famelinmodayazici.com.tr/") 
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod();
     });
 });
-builder.Services.AddIdentity<User,Role>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
+builder.Services.AddIdentity<User, Role>().AddEntityFrameworkStores<DataContext>().AddDefaultTokenProviders();
 
 
 builder.Services.AddControllers().AddNewtonsoftJson(options =>
@@ -58,8 +53,8 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 builder.Services.AddAuthentication(options => {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme; 
-    })
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
     .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false;
@@ -67,8 +62,8 @@ builder.Services.AddAuthentication(options => {
         {
             ValidateIssuer = false,
             ValidateAudience = false,
-            ValidateIssuerSigningKey=true,
-            IssuerSigningKey= new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["JWTSecurity:SecretKey"]!)),
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(builder.Configuration["JWTSecurity:SecretKey"]!)),
             ValidateLifetime = true,
 
         };
@@ -79,7 +74,7 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
 {
-    options.TokenLifespan = TimeSpan.FromHours(2); 
+    options.TokenLifespan = TimeSpan.FromHours(2);
 });
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 var app = builder.Build();
@@ -88,7 +83,8 @@ app.UseMiddleware<ExceptionHandling>();
 if (!app.Environment.IsDevelopment())
 {
     //app.MapOpenApi();
-    app.UseSwaggerUI(options => { options.SwaggerEndpoint("/openapi/v1.json", "Demo API");
+    app.UseSwaggerUI(options => {
+        options.SwaggerEndpoint("/openapi/v1.json", "Demo API");
     });
 
 }
@@ -99,12 +95,7 @@ else
 
 app.UseHttpsRedirection();
 app.UseDefaultFiles();
-app.UseStaticFiles();
-app.UseCors(opt =>
-{
-      opt.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
-
-});
+app.UseCors("DynamicCorsPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

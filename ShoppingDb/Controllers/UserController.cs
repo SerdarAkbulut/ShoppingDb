@@ -28,6 +28,47 @@ namespace ShoppingApi.Controllers
             _context = context;
             _emailService = emailService;
         }
+
+        [HttpGet]
+        public async Task<ActionResult> GetControlLogin( )
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            string token = "";
+            if (string.IsNullOrEmpty(token)||token== "undefined")
+            {
+                var guid = "anonymous_" + Guid.NewGuid().ToString().Substring(0, 8);
+                var anonymousUser = new User
+                {
+
+                    Id = 6161341+Guid.NewGuid().ToString(),
+                    UserName = guid,
+                    Email = "anonymous@yourapp.com",
+                    Name = "Anonymous User",
+                    SurName = guid
+
+                };
+
+                _context.Users.Add(anonymousUser);
+                _context.SaveChanges();
+                token = await _tokenService.GenerateToken(anonymousUser);
+                userId = anonymousUser.Id;
+                return Ok(new
+                {
+                    token
+                });
+            }
+            else
+            {
+
+
+
+                return Ok();
+
+            }
+          
+        }
+
         [HttpPut("update")]
         public async Task<IActionResult> UpdateUserProfile([FromBody] UserUpdateDTO updateUserDTO)
         {

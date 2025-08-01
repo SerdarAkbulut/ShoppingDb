@@ -12,6 +12,7 @@ using Address = Iyzipay.Model.Address;
 using Iyzipay.Request;
 using Newtonsoft.Json;
 using System.Globalization;
+using Microsoft.AspNetCore.Http.HttpResults;
 namespace ShoppingApi.Controllers
 {
     [Route("api/order")]
@@ -67,10 +68,32 @@ namespace ShoppingApi.Controllers
                 return BadRequest("Your cart is empty");
             }
             var items = new List<Entity.OrderItem>();
+            var colorDict = await _context.Colors
+.ToDictionaryAsync(c => c.Id, c => c.Name);
+
+            var sizeDict = await _context.Sizes
+                .ToDictionaryAsync(s => s.Id, s => s.Name);
 
             foreach (var item in cart.CartItems)
             {
                 var product = await _context.Products.FindAsync(item.ProductId);
+                var stock = await _context.ProductVariants
+                    .FirstOrDefaultAsync(s =>
+                        s.ProductId == item.ProductId &&
+                        s.ColorId == item.colorId &&
+                        s.SizeId == item.sizeId);
+                if (stock == null || stock.Stock - item.Quantity < 0)
+                {
+                    var variantInfo = string.Join(", ", product.ProductVariants
+                        .Select(p => $" {colorDict.GetValueOrDefault(p.ColorId)}/{sizeDict.GetValueOrDefault(p.SizeId)} {stock.Stock} adet kaldı"));
+
+                    return BadRequest(new
+                    {
+                        Message = $"Stok yetersiz: Ürün : {product.Name}, {variantInfo}"
+                    });
+                }
+                stock.Stock -= item.Quantity;
+
                 var orderItem = new Entity.OrderItem
                 {
                     ProductId = product.Id,
@@ -78,9 +101,11 @@ namespace ShoppingApi.Controllers
                     Name = product.Name,
                     Quantity = item.Quantity
                 };
+
                 items.Add(orderItem);
 
             }
+
             var subTotal = items.Sum(i => i.Price * i.Quantity);
 
             var orderAddress = await _context.Addresses.Where(i => i.Id == createOrderDTO.AdressId).FirstOrDefaultAsync();
@@ -156,6 +181,136 @@ namespace ShoppingApi.Controllers
             }
         }
 
+        [HttpPost("anon-order")]
+        public async Task<ActionResult<Order>> CreateAnonOrder(CreateAnonOrderDTO createAnonOrderDTO)
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+            var cart = await _context.Carts.Include(i => i.CartItems)
+            .ThenInclude(i => i.Product)
+            .Where(i => i.userId == userId).FirstOrDefaultAsync();
+
+            if (cart == null || cart.CartItems.Count == 0)
+            {
+                return BadRequest("Your cart is empty");
+            }
+            var items = new List<Entity.OrderItem>();
+
+            var colorDict = await _context.Colors
+    .ToDictionaryAsync(c => c.Id, c => c.Name);
+
+            var sizeDict = await _context.Sizes
+                .ToDictionaryAsync(s => s.Id, s => s.Name);
+
+            foreach (var item in cart.CartItems)
+            {
+                var product = await _context.Products.FindAsync(item.ProductId);
+                var stock = await _context.ProductVariants
+                    .FirstOrDefaultAsync(s =>
+                        s.ProductId == item.ProductId &&
+                        s.ColorId == item.colorId &&
+                        s.SizeId == item.sizeId);
+                if (stock == null || stock.Stock - item.Quantity<0)
+                {
+                    var variantInfo = string.Join(", ", product.ProductVariants
+                        .Select(p => $" {colorDict.GetValueOrDefault(p.ColorId)}/{sizeDict.GetValueOrDefault(p.SizeId)} {stock.Stock} adet kaldı"));
+
+                    return BadRequest(new
+                    {
+                        Message = $"Stok yetersiz: Ürün : {product.Name}, {variantInfo}"
+                    });
+                }
+                stock.Stock -= item.Quantity;
+             
+                var orderItem = new Entity.OrderItem
+                {
+                    ProductId = product.Id,
+                    Price = product.Price,
+                    Name = product.Name,
+                    Quantity = item.Quantity
+                };
+
+                items.Add(orderItem);
+
+            }
+            var subTotal = items.Sum(i => i.Price * i.Quantity);
+
+            
+
+            var order = new Order
+            {
+                OrderItems = items,
+                UserId = userId,
+                Phone = createAnonOrderDTO.anonAddress.Phone,
+                SubTotal = subTotal,
+                ApartmanNo = createAnonOrderDTO.anonAddress.ApartmanNo,
+                Cadde = createAnonOrderDTO.anonAddress.Cadde,
+                DaireNo = createAnonOrderDTO.anonAddress.DaireNo,
+                FullAddress = createAnonOrderDTO.anonAddress.FullAddress,
+                Sehir = createAnonOrderDTO.anonAddress.Sehir,
+                Sokak = createAnonOrderDTO.anonAddress.Sokak,
+                Ilce = createAnonOrderDTO.anonAddress.Ilce,
+
+            };
+            //payment buyer
+            var paymentBuyerName = createAnonOrderDTO.anonAddress.Ad;
+            var paymentBuyerSurName = createAnonOrderDTO.anonAddress.Soyad;
+            //email buyer 
+            var emailBuyer = createAnonOrderDTO.anonAddress.Email;
+
+            var card = createAnonOrderDTO.Card;
+            string formattedTotal = subTotal.ToString("0.00", CultureInfo.InvariantCulture);
+            var paymentResult = await ProcessAnonPayment(card, formattedTotal, order.Id.ToString(), paymentBuyerName, paymentBuyerSurName, emailBuyer,  createAnonOrderDTO);
+
+
+            if (paymentResult.Status != "success")
+            {
+                switch (paymentResult.ErrorCode)
+                {
+                    case "10051":
+                        return BadRequest(new { error = "Kart limiti yetersiz" });
+                    case "10005":
+                        return BadRequest(new { error = "İşlem onaylanmadı" });
+                    case "10012":
+                        return BadRequest(new { error = "Geçersiz işlem" });
+                    case "6001":
+                        return BadRequest(new { error = "Kayıp ya da çalıntı kart" });
+                    case "10054":
+                        return BadRequest(new { error = "Son kullanma tarihi hatalı" });
+                    case "10084":
+                        return BadRequest(new { error = "CVV bilgisi hatalı" });
+                    case "10057":
+                        return BadRequest(new { error = "Bu kartla işlem yapılamıyor. Lütfen farklı bir kart deneyin veya bankanızla iletişime geçin." });
+                    case "10058":
+                        return BadRequest(new { error = "Bu işlem kartınız tarafından desteklenmiyor. Lütfen farklı bir kart deneyin." });
+                    case "10034":
+                        return BadRequest(new { error = "Güvenlik nedeniyle işlem reddedildi. Lütfen bankanızla iletişime geçin." });
+                    case "10093":
+                        return BadRequest(new { error = "Kartınız internetten alışverişe kapalıdır. Açtırmak için bankanız ile irtibata geçebilirsiniz." });
+                    case "10202":
+                        return BadRequest(new { error = "Ödeme işlemi esnasında genel bir hata oluştu" });
+                    case "1":
+                        return BadRequest(new { error = "Sistem hatası oluştu" });
+                    case "13":
+                        return BadRequest(new { error = "Kart tarih bilgisi eşleşmiyor" });
+                    default:
+                        return BadRequest(new { error = "Bilinmeyen bir hata oluştu: " });
+                }
+            }
+            else
+            {
+                _context.Orders.Add(order);
+                _context.Carts.Remove(cart);
+                _context.SaveChanges();
+                order.OrderStatus = OrderStatus.Approved;
+
+                return CreatedAtRoute(nameof(GetOrder), new { id = order.Id }, order.Id);
+            }
+        }
+
 
         [HttpGet("installment-options/{bin}/{price}")]
         public async Task<ActionResult> CartControl(string bin, string price)
@@ -177,10 +332,10 @@ namespace ShoppingApi.Controllers
             return Ok(result);
         }
 
-        private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId,Entity.Address address,string paymentBuyerName,string paymentBuyerSurName, string emailBuyer ,CreateOrderDTO createOrderDTO)
+        private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId, Entity.Address address, string paymentBuyerName, string paymentBuyerSurName, string emailBuyer, CreateOrderDTO createOrderDTO)
         {
 
-      
+
 
             Options options = new Options();
             options.ApiKey = _config["PaymentAPI:APIKey"];
@@ -216,7 +371,7 @@ namespace ShoppingApi.Controllers
             paymentCard.CardHolderName = card.CardHolderName;
             paymentCard.CardNumber = card.CardNumber;
             paymentCard.ExpireMonth = card.ExpireMonth;
-            paymentCard.ExpireYear = 20+card.ExpireYear;
+            paymentCard.ExpireYear = 20 + card.ExpireYear;
             paymentCard.Cvc = card.Cvc;
             paymentCard.RegisterCard = 0;
             request.PaymentCard = paymentCard;
@@ -251,7 +406,7 @@ namespace ShoppingApi.Controllers
             request.BillingAddress = billingAddress;
 
             List<BasketItem> basketItems = new List<BasketItem>();
-            
+
             foreach (var orderItem in createOrderDTO.OrderItems)
             {
                 var basketItem = new BasketItem
@@ -261,7 +416,104 @@ namespace ShoppingApi.Controllers
                     ItemType = BasketItemType.PHYSICAL.ToString(),
                     Price = (orderItem.Price * orderItem.Quantity).ToString("0.00", CultureInfo.InvariantCulture),
                     Category1 = string.Join(", ", GetProductCategories(orderItem.ProductId)),
-                   
+
+
+                };
+                basketItems.Add(basketItem);
+            }
+            request.BasketItems = basketItems;
+
+            var result = await Payment.Create(request, options);
+            Console.WriteLine(result.Status == "success" ? "Ödeme başarılı!" : $"Ödeme başarısız: {result.ErrorMessage}");
+            return result; 
+        }
+
+       
+        private async Task<Payment> ProcessAnonPayment(CardDTO card, string price, string orderId,  string paymentBuyerName, string paymentBuyerSurName, string emailBuyer, CreateAnonOrderDTO createAnonOrderDTO)
+        {
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            Options options = new Options();
+            options.ApiKey = _config["PaymentAPI:APIKey"];
+            options.SecretKey = _config["PaymentAPI:SecretKey"];
+            options.BaseUrl = "https://sandbox-api.iyzipay.com";
+
+            var installmentRequest = new RetrieveInstallmentInfoRequest
+            {
+                Locale = "tr",
+                BinNumber = card.CardNumber.Substring(0, 6),
+                ConversationId = Guid.NewGuid().ToString(),
+                Price = price
+            };
+
+
+            var installmentResult = await InstallmentInfo.Retrieve(installmentRequest, options);
+
+            var selectedInstallment = installmentResult.InstallmentDetails
+                .FirstOrDefault()?.InstallmentPrices
+                .FirstOrDefault(i => i.InstallmentNumber == card.Installment);
+            CreatePaymentRequest request = new CreatePaymentRequest();
+            request.Locale = Locale.TR.ToString();
+            request.ConversationId = "123456789";
+            request.Price = price;
+            request.PaidPrice = selectedInstallment.TotalPrice.ToString(CultureInfo.InvariantCulture); ;
+            request.Currency = Currency.TRY.ToString();
+            request.Installment = card.Installment;
+            request.BasketId = orderId;
+            request.PaymentChannel = PaymentChannel.WEB.ToString();
+            request.PaymentGroup = PaymentGroup.PRODUCT.ToString();
+
+            PaymentCard paymentCard = new PaymentCard();
+            paymentCard.CardHolderName = card.CardHolderName;
+            paymentCard.CardNumber = card.CardNumber;
+            paymentCard.ExpireMonth = card.ExpireMonth;
+            paymentCard.ExpireYear = 20 + card.ExpireYear;
+            paymentCard.Cvc = card.Cvc;
+            paymentCard.RegisterCard = 0;
+            request.PaymentCard = paymentCard;
+
+            Buyer buyer = new Buyer();
+            buyer.Id = userId;
+            buyer.Name = paymentBuyerName;
+            buyer.Surname = paymentBuyerSurName;
+            buyer.GsmNumber = createAnonOrderDTO.anonAddress.Phone;
+            buyer.Email = emailBuyer;
+            buyer.RegistrationAddress = createAnonOrderDTO.anonAddress.FullAddress;
+            buyer.City = createAnonOrderDTO.anonAddress.Sehir;
+            buyer.Country = "Turkey";
+            buyer.ZipCode = "34732";
+            buyer.IdentityNumber = "12345678901";
+            request.Buyer = buyer;
+
+            Address shippingAddress = new Address();
+            shippingAddress.ContactName = createAnonOrderDTO.anonAddress.Ad;
+            shippingAddress.City = createAnonOrderDTO.anonAddress.Sehir;
+            shippingAddress.Country = "Turkey";
+            shippingAddress.Description = createAnonOrderDTO.anonAddress.FullAddress;
+            shippingAddress.ZipCode = "34742";
+            request.ShippingAddress = shippingAddress;
+
+            Address billingAddress = new Address();
+            billingAddress.ContactName = createAnonOrderDTO.anonAddress.Ad;
+            billingAddress.City = createAnonOrderDTO.anonAddress.Sehir;
+            billingAddress.Country = "Turkey";
+            billingAddress.Description = createAnonOrderDTO.anonAddress.FullAddress;
+            billingAddress.ZipCode = "34742";
+            request.BillingAddress = billingAddress;
+
+            List<BasketItem> basketItems = new List<BasketItem>();
+
+            foreach (var orderItem in createAnonOrderDTO.OrderItems)
+            {
+                var basketItem = new BasketItem
+                {
+                    Id = orderItem.ProductId.ToString(),
+                    Name = orderItem.Name,
+                    ItemType = BasketItemType.PHYSICAL.ToString(),
+                    Price = (orderItem.Price * orderItem.Quantity).ToString("0.00", CultureInfo.InvariantCulture),
+                    Category1 = string.Join(", ", GetProductCategories(orderItem.ProductId)),
+
 
                 };
                 basketItems.Add(basketItem);
@@ -273,21 +525,21 @@ namespace ShoppingApi.Controllers
             return result;
         }
 
-
         private List<string> GetProductCategories(int productId)
         {
-            var productCategories = _context.Products
+            var product = _context.Products
                 .Include(p => p.ProductCategories)
                 .ThenInclude(pc => pc.Category)
-                .Where(p => p.Id == productId)
-                .ToList();
+                .FirstOrDefault(p => p.Id == productId);
 
-            return productCategories
-                .SelectMany(p => p.ProductCategories)
+            if (product == null)
+                return new List<string>();
+
+            return product.ProductCategories
                 .Select(pc => pc.Category.Name)
                 .ToList();
         }
-     
+
 
 
     }

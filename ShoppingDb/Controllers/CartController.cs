@@ -30,7 +30,7 @@ namespace ShoppingApi.Controllers
             return CartToDTO(cart);
         }
 
-        // POST: api/cart/add?productId=1&quantity=2&userId=abc123
+       
         [HttpPost("add")]
         public async Task<ActionResult> AddItemToCart(int productId, int quantity, int colorId, int sizeId)
         {
@@ -52,17 +52,16 @@ namespace ShoppingApi.Controllers
             return BadRequest(new ProblemDetails { Title = "The product could not be added to the cart" });
         }
 
-        // DELETE: api/cart/delete?productId=1&quantity=1&userId=abc123
         [HttpDelete("deleteItem")]
         [Authorize]
-        public async Task<ActionResult> DeleteFromCart(int productId, int quantity)
+        public async Task<ActionResult> DeleteFromCart(int productId, int quantity, int colorId, int sizeId)
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userId))
         return Unauthorized();
             var cart = await GetOrCreate(userId);
 
-            cart.DeleteItem(productId, quantity);
+            cart.DeleteItem(productId, quantity,colorId,sizeId);
             var result = await _context.SaveChangesAsync() > 0;
 
             if (result)
@@ -71,7 +70,7 @@ namespace ShoppingApi.Controllers
             return BadRequest(new ProblemDetails { Title = "The product could not be removed from the cart" });
         }
 
-        // Yardımcı: Cart oluşturur veya var olanı getirir
+        
         private async Task<Cart> GetOrCreate(string userId)
         {
             var cart = await _context.Carts
@@ -93,7 +92,7 @@ namespace ShoppingApi.Controllers
             return cart;
         }
 
-        // Yardımcı: Cart'ı DTO'ya dönüştür
+     
         private CartDTO CartToDTO(Cart cart)
         {
             return new CartDTO
