@@ -14,7 +14,7 @@ namespace ShoppingApi.Entity
         public string Cadde { get; set; }
         public string Sokak { get; set; }
 
-        public int ApartmanNo { get; set; }
+        public string ApartmanNo { get; set; }
         public int DaireNo { get; set; }
 
         public string FullAddress { get; set; }

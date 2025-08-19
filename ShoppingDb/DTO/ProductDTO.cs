@@ -69,4 +69,9 @@ namespace ShoppingDb.DTO
         public List<ImageDTO> Images { get; set; } = new List<ImageDTO>();
     }
 
+    public class ColorDto
+    {
+        public string Color { get; set; }
+    }
+
 }

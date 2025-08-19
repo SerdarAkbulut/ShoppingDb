@@ -13,6 +13,7 @@ using System.Globalization;
 using AutoMapper;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
+using System.Drawing;
 namespace ShoppingApi.Controllers
 {
     [ApiController]
@@ -26,13 +27,27 @@ namespace ShoppingApi.Controllers
         private readonly IMapper _mapper;
         private readonly UserManager<User> _userManager;
         private readonly IConfiguration _configuration;
-        public ProductController(DataContext context,IMapper mapper, UserManager<User> userManager, IConfiguration configuration)
+        public ProductController(DataContext context, IMapper mapper, UserManager<User> userManager, IConfiguration configuration)
         {
             _context = context;
             _mapper = mapper;
-       _userManager = userManager;
+            _userManager = userManager;
             _configuration = configuration;
         }
+
+        [HttpGet("get-size")]
+        public async Task<IActionResult> GetSizes()
+        {
+            var sizes = await _context.Sizes.ToListAsync();
+            return Ok(sizes);
+        }
+        [HttpGet("get-color")]
+        public async Task<IActionResult> GetColors()
+        {
+            var colors = await _context.Colors.ToListAsync();
+            return Ok(colors);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetProducts([FromQuery] int page)
         {
@@ -43,7 +58,7 @@ namespace ShoppingApi.Controllers
                 .Include(p => p.ProductCategories)
                 .Include(p => p.Images)
                 .Skip((page - 1) * pageSize)
-                .Take(pageSize + 1) 
+                .Take(pageSize + 1)
                 .ToListAsync();
 
             bool hasNextPage = products.Count > pageSize;
@@ -65,7 +80,7 @@ namespace ShoppingApi.Controllers
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
 
-            if(role != "Admin")
+            if (role != "Admin")
             {
                 return BadRequest();
             }
@@ -77,13 +92,13 @@ namespace ShoppingApi.Controllers
                  {
                      i.Id,
                      i.Name,
-                     price = i.Price.ToString("N2", new CultureInfo("tr-TR")),
+                     price = i.Price,
                      i.Description,
-                     productVariants = i.ProductVariants.Select(v => new { color = v.Color.Name, colorId = v.Color.Id, v.Stock, sizeId = v.Size.Id, size = v.Size.Name, v.Id }).ToList(),
+                     productVariants = i.ProductVariants.Where(v => v.Stock > 0).Select(v => new { v.Color, v.Stock, v.Size, v.Id }).ToList(),
                      Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
                      ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList(),
                      i.IsActive
-                     
+
                  })
                  .ToListAsync();
 
@@ -98,12 +113,12 @@ namespace ShoppingApi.Controllers
                 .Where(p => p.Id == id)
                 .Include(p => p.ProductCategories)
                     .ThenInclude(pc => pc.Category)
+                .Include(p => p.Images)
                 .Select(p => new
                 {
                     p.Id,
                     p.Name,
                     p.Discount,
-
                     Categories = p.ProductCategories.Select(pc => new
                     {
                         pc.Category.Id,
@@ -111,15 +126,18 @@ namespace ShoppingApi.Controllers
                     }),
                     p.Description,
                     price = p.Price,
-                    ProductVariants = p.ProductVariants.Select(pv => new
+                    ProductVariants = p.ProductVariants
+                        .Where(pv => pv.Stock > 0) // filtreleme burada
+                        .Select(pv => new
+                        {
+                            pv.Id,
+                            pv.Color,
+                            pv.Size,
+                            pv.Stock
+                        }),
+                    Images = p.Images.Select(pi => new
                     {
-                        pv.Id,
-                        pv.Color,
-                        pv.Size
-                    }),
-                    Images = p.Images.Select(pi => new 
-                    { 
-pi.ImageUrl                    
+                        pi.ImageUrl
                     })
                 })
                 .FirstOrDefaultAsync();
@@ -131,6 +149,7 @@ pi.ImageUrl
 
             return Ok(product);
         }
+
         [HttpGet("product-variant")]
         public async Task<IActionResult> GetVariants()
         {
@@ -173,7 +192,7 @@ pi.ImageUrl
                     {
                         ImageUrl = uploadResult.SecureUrl.ToString(),
                         PublicId = uploadResult.PublicId,
-                        
+
                     });
                 }
             }
@@ -183,7 +202,7 @@ pi.ImageUrl
                 Name = product.Name,
                 Description = product.Description,
                 Price = product.Price,
-                IsActive =true,
+                IsActive = true,
                 ProductVariants = product.ProductVariants.Select(pv => new ProductVariant
                 {
                     SizeId = pv.SizeId,
@@ -195,6 +214,7 @@ pi.ImageUrl
                     CategoryId = c.CategoryId
                 }).ToList(),
                 Images = imageList
+                
             };
 
             await _context.Products.AddAsync(newProduct);
@@ -339,13 +359,13 @@ pi.ImageUrl
 
             var products = await query
                 .Skip((page - 1) * 2)
-                .Take(2+1) 
+                .Take(2 + 1)
                 .ToListAsync();
 
             bool hasNextPage = products.Count > 2;
 
             if (hasNextPage)
-                products.RemoveAt(2); 
+                products.RemoveAt(2);
 
             return Ok(new
             {
@@ -358,10 +378,10 @@ pi.ImageUrl
         public async Task<IActionResult> GetHomeProducts()
         {
             var products = await _context.Products
-                .Where(p=>p.IsActive==true).OrderByDescending(p=>p.Id)
+                .Where(p => p.IsActive == true).OrderByDescending(p => p.Id)
                   .Include(i => i.ProductCategories)
-                    .Include(p=>p.Images)
-            
+                    .Include(p => p.Images)
+
                   .ToListAsync();
             var productDTOs = _mapper.Map<List<GETProducts>>(products);
 
@@ -373,21 +393,21 @@ pi.ImageUrl
             var products = await _context.Products
                .Include(p => p.ProductCategories)
                 .Include(p => p.Images)
-                  .OrderByDescending(p=>p.Id).Take(5)
+                  .OrderByDescending(p => p.Id).Take(5)
                   .ToListAsync();
-                  var productDTOs=_mapper.Map<List<GETProducts>>(products);
+            var productDTOs = _mapper.Map<List<GETProducts>>(products);
 
             return Ok(productDTOs);
         }
 
         [HttpGet("search/{page}")]
-        public async Task<IActionResult> SearchProducts([FromQuery] string q,int page)
+        public async Task<IActionResult> SearchProducts([FromQuery] string q, int page)
         {
-            var query =  _context.Products
+            var query = _context.Products
                 .Include(p => p.ProductCategories)
                 .Include(p => p.Images)
                 .Where(p => p.Name.ToLower().Contains(q.ToLower()) || p.Description.ToLower().Contains(q.ToLower()));
-               
+
             var products = await query.Skip((page - 1) * 10).Take(10 + 1).ToListAsync();
             var productDTOs = _mapper.Map<List<GETProducts>>(products);
             bool hasNextPage = products.Count > 10;
@@ -414,15 +434,15 @@ pi.ImageUrl
             return Ok(new { message = "Ürün durumu güncellendi.", product });
         }
         [HttpPut("add-discount/{id}/{discount}")]
-        public async Task<IActionResult> AddDiscount(int id,string discount)
+        public async Task<IActionResult> AddDiscount(int id, string discount)
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null)
                 return NotFound(new { message = "Ürün Bulunamadı" });
-            product.Discount =   discount;
+            product.Discount = discount;
             _context.SaveChangesAsync();
             return Ok(product);
-            
+
         }
         [HttpDelete("delete-discount/{id}")]
         public async Task<IActionResult> DeleteDiscount(int id)
@@ -436,5 +456,81 @@ pi.ImageUrl
             return Ok(product);
 
         }
+
+        [HttpPost("add-color")]
+        public async Task<IActionResult> AddColor([FromBody] ColorDto request)
+        {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (role != "Admin")
+            {
+                return BadRequest();
+            }
+
+            var newColor = new Entity.Color
+            {
+                Name = request.Color
+            };
+
+            _context.Colors.Add(newColor);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Renk ekleme işlemi başarılı" });
+        }
+
+        [HttpDelete("delete-color/{id}")]
+        public async Task<IActionResult> DeleteColor(int id)
+        {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+            {
+                return BadRequest();
+            }
+            var color = await _context.Colors.FindAsync(id);
+            if (color == null)
+            {
+                return NotFound(new { message = "Renk bulunamadı" });
+            }
+            _context.Colors.Remove(color);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Renk silme işlemi başarılı" });
+        }
+        [HttpPost("add-size")]
+        public async Task<IActionResult> AddSize( SizeDTO size)
+        {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            if (role != "Admin")
+            {
+                return BadRequest();
+            }
+            var newSize = new Entity.Size
+            {
+                Name = size.Name
+            };
+            _context.Sizes.AddAsync(newSize);
+            _context.SaveChangesAsync();
+            return Ok(new { message = "Beden ekleme işlemi başarılı" });
+
+        }
+        [HttpDelete("delete-size/{id}")]
+        public async Task<IActionResult> DeleteSize(int id)
+        {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role != "Admin")
+            {
+                return BadRequest();
+            }
+            var size = await _context.Sizes.FindAsync(id);
+
+            if (size == null)
+            {
+                return NotFound(new { message = "Renk bulunamadı" });
+            }
+            _context.Sizes.Remove(size);
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Beden silme işlemi başarılı" });
+        }
+
     }
 }
