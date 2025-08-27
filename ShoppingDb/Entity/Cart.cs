@@ -9,7 +9,7 @@ namespace ShoppingApi.Entity
         public string userId { get; set; } = null!;
      
         public List<CartItem> CartItems { get; set; } = new();
-
+        public decimal CargoFee { get; set; }
 
         public void AddItem(Product product, int quantity, int colorId, int sizeId)
         {
@@ -60,5 +60,6 @@ namespace ShoppingApi.Entity
         public Size size { get; set; }
         public int sizeId { get; set; }
         public int Quantity { get; set; }
+        public bool IsCargoFree { get; set; }
     }
 }

@@ -14,6 +14,7 @@ using AutoMapper;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using System.Drawing;
+using ShoppingApi.DTO;
 namespace ShoppingApi.Controllers
 {
     [ApiController]
@@ -35,6 +36,27 @@ namespace ShoppingApi.Controllers
             _configuration = configuration;
         }
 
+
+        [HttpGet("cargo-fee")]
+        public async Task<IActionResult> GetCargoFee()
+        {
+            var cargoFee = _context.Cargos;
+            return Ok(cargoFee);
+        }
+        [HttpPut("cargo-fee/{id}/{price}")]
+        public async Task<IActionResult> UpdateCargoFee(int id, decimal price)
+        {
+            var cargoFee = await _context.Cargos.FirstOrDefaultAsync(c => c.Id == id);
+
+            if (cargoFee == null)
+                return NotFound(new { message = "Kargo ücreti bulunamadı" });
+
+            cargoFee.CargoFee = price;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Kargo ücreti güncellendi", cargoFee });
+        }
         [HttpGet("get-size")]
         public async Task<IActionResult> GetSizes()
         {
@@ -97,7 +119,8 @@ namespace ShoppingApi.Controllers
                      productVariants = i.ProductVariants.Where(v => v.Stock > 0).Select(v => new { v.Color, v.Stock, v.Size, v.Id }).ToList(),
                      Images = i.Images.Select(img => new { img.Id, img.ImageUrl }).ToList(),
                      ProductCategories = i.ProductCategories.Select(pc => new { pc.Category.Name, pc.CategoryId, pc.Id }).ToList(),
-                     i.IsActive
+                     i.IsActive,
+                     i.IsCargoFree
 
                  })
                  .ToListAsync();
@@ -105,7 +128,22 @@ namespace ShoppingApi.Controllers
 
             return Ok(products);
         }
+        [HttpPut("cargo-fee-update/{id}")]
+        public async Task<IActionResult> CargoFeeUpdate(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
 
+            if (product == null)
+            {
+                return NotFound(new { message = "Ürün bulunamadı." });
+            }
+
+            product.IsCargoFree = !product.IsCargoFree; // toggle
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Ürün durumu güncellendi.", cargoFree = product.IsCargoFree });
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
@@ -213,8 +251,9 @@ namespace ShoppingApi.Controllers
                 {
                     CategoryId = c.CategoryId
                 }).ToList(),
-                Images = imageList
-                
+                Images = imageList,
+                IsCargoFree = false
+
             };
 
             await _context.Products.AddAsync(newProduct);
@@ -258,7 +297,7 @@ namespace ShoppingApi.Controllers
             return Ok(new { message = "Ürün ve görseller başarıyla silindi." });
         }
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductDTO? productDTO)
+        public async Task<IActionResult> UpdateProduct(int id, [FromBody] ProductUpdateDTO? productDTO)
         {
             var cloudinaryUrl = _configuration["Cloudinary:CloudinaryUrl"];
             var cloudinary = new Cloudinary(cloudinaryUrl);
@@ -273,7 +312,6 @@ namespace ShoppingApi.Controllers
             if (product == null)
                 return NotFound();
 
-            // 1. Eski resimleri DTO'da olmayanlara göre sil
             var dtoIds = productDTO.Images.Where(i => i.Id != 0).Select(i => i.Id).ToList();
             var imagesToDelete = product.Images.Where(img => !dtoIds.Contains(img.Id)).ToList();
 
@@ -325,9 +363,9 @@ namespace ShoppingApi.Controllers
             // Yeni bilgileri ata
             product.ProductVariants = productDTO.ProductVariants.Select(pv => new ProductVariant
             {
-                SizeId = pv.SizeId,
-                ColorId = pv.ColorId,
-                Stock = pv.Stock
+                SizeId = pv.size.Id,
+                ColorId = pv.color.Id,
+                Stock = pv.stock
             }).ToList();
 
             product.ProductCategories = productDTO.ProductCategories.Select(c => new ProductCategory
@@ -335,7 +373,7 @@ namespace ShoppingApi.Controllers
                 CategoryId = c.CategoryId
             }).ToList();
 
-            product.Images.AddRange(newImages); // sadece yeni resimleri ekle (silinenler zaten kaldırıldı)
+            product.Images.AddRange(newImages); 
 
             await _context.SaveChangesAsync();
 
@@ -508,8 +546,8 @@ namespace ShoppingApi.Controllers
             {
                 Name = size.Name
             };
-            _context.Sizes.AddAsync(newSize);
-            _context.SaveChangesAsync();
+           await _context.Sizes.AddAsync(newSize);
+         await   _context.SaveChangesAsync();
             return Ok(new { message = "Beden ekleme işlemi başarılı" });
 
         }

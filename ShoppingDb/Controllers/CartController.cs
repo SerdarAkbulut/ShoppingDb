@@ -30,7 +30,9 @@ namespace ShoppingApi.Controllers
             return CartToDTO(cart);
         }
 
-       
+
+    
+
         [HttpPost("add")]
         public async Task<ActionResult> AddItemToCart(int productId, int quantity, int colorId, int sizeId)
         {
@@ -107,7 +109,10 @@ namespace ShoppingApi.Controllers
                     Quantity = item.Quantity,
                     ImageUrl = item.Product?.Images.FirstOrDefault()?.ImageUrl,
                    color=item.color,
-                   size=item.size
+                   size=item.size,
+                   IsCargoFree=item.Product.IsCargoFree
+                   
+                   
                 }).ToList()
             };
         }

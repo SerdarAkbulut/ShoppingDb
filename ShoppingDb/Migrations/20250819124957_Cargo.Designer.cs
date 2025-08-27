@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ShoppingApi.Data;
 
@@ -11,9 +12,11 @@ using ShoppingApi.Data;
 namespace ShoppingApi.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20250819124957_Cargo")]
+    partial class Cargo
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -182,22 +185,6 @@ namespace ShoppingApi.Migrations
                     b.ToTable("Addresses");
                 });
 
-            modelBuilder.Entity("ShoppingApi.Entity.Cargo", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("CargoFee")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Cargos");
-                });
-
             modelBuilder.Entity("ShoppingApi.Entity.Cart", b =>
                 {
                     b.Property<int>("CartId")
@@ -228,9 +215,6 @@ namespace ShoppingApi.Migrations
 
                     b.Property<int>("CartId")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsCargoFree")
-                        .HasColumnType("bit");
 
                     b.Property<int>("ProductId")
                         .HasColumnType("int");

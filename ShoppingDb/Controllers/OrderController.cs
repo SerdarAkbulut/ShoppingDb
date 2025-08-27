@@ -73,10 +73,16 @@ namespace ShoppingApi.Controllers
 
             var sizeDict = await _context.Sizes
                 .ToDictionaryAsync(s => s.Id, s => s.Name);
-
+            var cargofee = await _context.Cargos.FirstOrDefaultAsync();
+            var cargoPrice = cargofee.CargoFee;
             foreach (var item in cart.CartItems)
             {
                 var product = await _context.Products.FindAsync(item.ProductId);
+                if (product.IsCargoFree == true)
+                {
+                    cargoPrice = 0;
+                    break;
+                }
                 var stock = await _context.ProductVariants
                     .FirstOrDefaultAsync(s =>
                         s.ProductId == item.ProductId &&
@@ -106,7 +112,7 @@ namespace ShoppingApi.Controllers
 
             }
 
-            var subTotal = items.Sum(i => i.Price * i.Quantity);
+            var subTotal = createOrderDTO.OrderItems.Sum(i => i.Price * i.Quantity);
 
             var orderAddress = await _context.Addresses.Where(i => i.Id == createOrderDTO.AdressId).FirstOrDefaultAsync();
 
@@ -133,7 +139,9 @@ namespace ShoppingApi.Controllers
 
             var card = createOrderDTO.Card;
             string formattedTotal = subTotal.ToString("0.00", CultureInfo.InvariantCulture);
-         var paymentResult=   await ProcessPayment(card, formattedTotal, order.Id.ToString(),orderAddress,paymentBuyerName,paymentBuyerSurName,emailBuyer,createOrderDTO );
+            var totalPrice = subTotal + cargoPrice;
+            var formattedTotalPrice = totalPrice.ToString("0.00", CultureInfo.InvariantCulture);
+            var paymentResult=   await ProcessPayment(card, formattedTotal, formattedTotalPrice, order.Id.ToString(),orderAddress,paymentBuyerName,paymentBuyerSurName,emailBuyer,createOrderDTO );
 
 
             if (paymentResult.Status != "success")
@@ -204,10 +212,18 @@ namespace ShoppingApi.Controllers
 
             var sizeDict = await _context.Sizes
                 .ToDictionaryAsync(s => s.Id, s => s.Name);
+            var cargofee = await _context.Cargos.FirstOrDefaultAsync();
 
+            var cargoPrice =  cargofee.CargoFee;
             foreach (var item in cart.CartItems)
             {
                 var product = await _context.Products.FindAsync(item.ProductId);
+                if (product.IsCargoFree == true)
+                {
+                    cargoPrice = 0;
+                    break;
+                }
+               
                 var stock = await _context.ProductVariants
                     .FirstOrDefaultAsync(s =>
                         s.ProductId == item.ProductId &&
@@ -236,7 +252,7 @@ namespace ShoppingApi.Controllers
                 items.Add(orderItem);
 
             }
-            var subTotal = items.Sum(i => i.Price * i.Quantity);
+            var subTotal = createAnonOrderDTO.OrderItems.Sum(i => i.Price * i.Quantity);
 
             
 
@@ -263,7 +279,9 @@ namespace ShoppingApi.Controllers
 
             var card = createAnonOrderDTO.Card;
             string formattedTotal = subTotal.ToString("0.00", CultureInfo.InvariantCulture);
-            var paymentResult = await ProcessAnonPayment(card, formattedTotal, order.Id.ToString(), paymentBuyerName, paymentBuyerSurName, emailBuyer,  createAnonOrderDTO);
+            var totalPrice = subTotal + cargoPrice;
+            var formattedTotalPrice = totalPrice.ToString("0.00", CultureInfo.InvariantCulture);
+            var paymentResult = await ProcessAnonPayment(card, formattedTotal, formattedTotalPrice, order.Id.ToString(), paymentBuyerName, paymentBuyerSurName, emailBuyer,  createAnonOrderDTO);
 
 
             if (paymentResult.Status != "success")
@@ -332,7 +350,7 @@ namespace ShoppingApi.Controllers
             return Ok(result);
         }
 
-        private async Task<Payment> ProcessPayment(CardDTO card, string price, string orderId, Entity.Address address, string paymentBuyerName, string paymentBuyerSurName, string emailBuyer, CreateOrderDTO createOrderDTO)
+        private async Task<Payment> ProcessPayment(CardDTO card, string price, string totalPrice, string orderId, Entity.Address address, string paymentBuyerName, string paymentBuyerSurName, string emailBuyer, CreateOrderDTO createOrderDTO)
         {
 
 
@@ -360,7 +378,7 @@ namespace ShoppingApi.Controllers
             request.Locale = Locale.TR.ToString();
             request.ConversationId = "123456789";
             request.Price = price;
-            request.PaidPrice = selectedInstallment.TotalPrice.ToString(CultureInfo.InvariantCulture); ;
+            request.PaidPrice = totalPrice; 
             request.Currency = Currency.TRY.ToString();
             request.Installment = card.Installment;
             request.BasketId = orderId;
@@ -429,7 +447,7 @@ namespace ShoppingApi.Controllers
         }
 
        
-        private async Task<Payment> ProcessAnonPayment(CardDTO card, string price, string orderId,  string paymentBuyerName, string paymentBuyerSurName, string emailBuyer, CreateAnonOrderDTO createAnonOrderDTO)
+        private async Task<Payment> ProcessAnonPayment(CardDTO card, string price,string totalPrice, string orderId,  string paymentBuyerName, string paymentBuyerSurName, string emailBuyer, CreateAnonOrderDTO createAnonOrderDTO)
         {
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -457,7 +475,7 @@ namespace ShoppingApi.Controllers
             request.Locale = Locale.TR.ToString();
             request.ConversationId = "123456789";
             request.Price = price;
-            request.PaidPrice = selectedInstallment.TotalPrice.ToString(CultureInfo.InvariantCulture); ;
+            request.PaidPrice = totalPrice;
             request.Currency = Currency.TRY.ToString();
             request.Installment = card.Installment;
             request.BasketId = orderId;

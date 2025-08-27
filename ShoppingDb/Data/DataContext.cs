@@ -21,12 +21,12 @@ namespace ShoppingApi.Data
         public DbSet<Color> Colors { get; set; }
         public DbSet<Size> Sizes { get; set; }
         public DbSet<Slider> Sliders { get; set; } 
+        public DbSet<Cargo> Cargos { get; set; }
     public DbSet<ProductVariant> ProductVariants { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ✅ Önce İlişki Tanımla
             modelBuilder.Entity<Address>()
                 .HasOne(a => a.User)
                 .WithMany(u => u.Addresses)

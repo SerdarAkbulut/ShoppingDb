@@ -18,6 +18,7 @@ namespace ShoppingDb.Entity
         public decimal Price { get; set; }
 
         public bool IsActive { get; set; }
+        public bool IsCargoFree { get; set; }
 
         public string? Discount { get; set; }
 
